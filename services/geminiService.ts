@@ -4,7 +4,7 @@ import { FileData, AnalysisResult } from "../types";
 import { calculateDeterministicScore, getScoreStatus } from "./scoringLogic";
 
 // Initialize Gemini
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
 const MODEL_NAME = "gemini-3-pro-preview";
 
 let chatSession: Chat | null = null;
