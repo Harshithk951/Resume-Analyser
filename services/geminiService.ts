@@ -3,7 +3,9 @@ import { SYSTEM_PROMPT } from "../constants";
 import { FileData, AnalysisResult } from "../types";
 import { calculateDeterministicScore, getScoreStatus } from "./scoringLogic";
 
-const MODEL_NAME = "gemini-3-pro-preview";
+// Model can be overridden via env (useful if a model name gets deprecated).
+// Must be a multimodal model because we send inlineData (PDF/image as base64).
+const MODEL_NAME = import.meta.env.VITE_GEMINI_MODEL ?? "gemini-1.5-flash";
 
 let aiInstance: GoogleGenAI | null = null;
 let chatSession: Chat | null = null;

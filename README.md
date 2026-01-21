@@ -95,7 +95,7 @@ Create a `.env` file in the root directory:
 
 ```env
 # Get key from https://aistudio.google.com/
-API_KEY=your_gemini_api_key_here
+VITE_API_KEY=your_gemini_api_key_here
 ```
 
 ### 3. Run Development Server
