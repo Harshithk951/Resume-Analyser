@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ResumeOptima</title>
+  </head>
+  <body>
+    <!--
+      GitHub Pages serves 404.html for unknown paths.
+      This redirects back to index.html while preserving the original path + query.
+    -->
+    <script>
+      (function () {
+        var l = window.location;
+        var newUrl = l.origin + l.pathname.replace(/\/404\.html$/, "/") + "?p=" + encodeURIComponent(l.pathname + l.search + l.hash);
+        window.location.replace(newUrl);
+      })();
+    </script>
+  </body>
+</html>
+
+

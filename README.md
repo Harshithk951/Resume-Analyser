@@ -101,10 +101,29 @@ API_KEY=your_gemini_api_key_here
 ### 3. Run Development Server
 
 ```bash
-npm start
+npm run dev
 ```
 
-Open [http://localhost:8080](http://localhost:8080) to view the app.
+Open the URL Vite prints (usually `http://localhost:5173`) to view the app.
+
+---
+
+## 🌍 Deployment (Fixing 404s on refresh / deep links)
+
+Static hosts can return **404** when you refresh a non-root URL unless they rewrite all routes back to `index.html`.
+This repo includes the standard configs:
+
+- **Vercel**: `vercel.json` rewrite to `/`
+- **Netlify**: `netlify.toml` redirect `/* -> /index.html (200)`
+- **GitHub Pages**: `public/404.html` fallback + `public/.nojekyll`
+
+### GitHub Pages base path
+
+If your repo is served from a subpath like `/ResumeOptima/`, set a base path at build time:
+
+```bash
+VITE_BASE=/ResumeOptima/ npm run build
+```
 
 ---
 

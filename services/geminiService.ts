@@ -3,14 +3,26 @@ import { SYSTEM_PROMPT } from "../constants";
 import { FileData, AnalysisResult } from "../types";
 import { calculateDeterministicScore, getScoreStatus } from "./scoringLogic";
 
-// Initialize Gemini
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
 const MODEL_NAME = "gemini-3-pro-preview";
 
+let aiInstance: GoogleGenAI | null = null;
 let chatSession: Chat | null = null;
+
+// Lazy initialization of AI client
+function getAI(): GoogleGenAI {
+  if (!aiInstance) {
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (!apiKey) {
+      throw new Error("Gemini API key is not configured. Please set the VITE_API_KEY environment variable.");
+    }
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+}
 
 export const startGeneralChat = async (): Promise<string> => {
   try {
+    const ai = getAI();
     chatSession = ai.chats.create({
       model: MODEL_NAME,
       config: {
@@ -28,6 +40,7 @@ export const analyzeResume = async (
   fileData: FileData
 ): Promise<{ text: string; result: AnalysisResult }> => {
   try {
+    const ai = getAI();
     const base64Data = fileData.base64.split(",")[1];
 
     chatSession = ai.chats.create({
