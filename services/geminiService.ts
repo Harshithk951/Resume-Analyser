@@ -1,36 +1,24 @@
-import { GoogleGenAI, Chat } from "@google/genai";
 import { SYSTEM_PROMPT } from "../constants";
 import { FileData, AnalysisResult } from "../types";
 import { calculateDeterministicScore, getScoreStatus } from "./scoringLogic";
 
-// Model can be overridden via env (useful if a model name gets deprecated).
-// Must be a multimodal model because we send inlineData (PDF/image as base64).
-const MODEL_NAME = import.meta.env.VITE_GEMINI_MODEL ?? "gemini-1.5-flash";
+async function callGeminiApi<TBody extends Record<string, any>>(body: TBody): Promise<string> {
+  const res = await fetch("/api/gemini", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 
-let aiInstance: GoogleGenAI | null = null;
-let chatSession: Chat | null = null;
-
-// Lazy initialization of AI client
-function getAI(): GoogleGenAI {
-  if (!aiInstance) {
-    const apiKey = import.meta.env.VITE_API_KEY;
-    if (!apiKey) {
-      throw new Error("Gemini API key is not configured. Please set the VITE_API_KEY environment variable.");
-    }
-    aiInstance = new GoogleGenAI({ apiKey });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.error || `Gemini API failed (${res.status})`);
   }
-  return aiInstance;
+  return data?.text || "";
 }
 
 export const startGeneralChat = async (): Promise<string> => {
   try {
-    const ai = getAI();
-    chatSession = ai.chats.create({
-      model: MODEL_NAME,
-      config: {
-        systemInstruction: "You are a Senior ATS Architect. You DO NOT give career advice. You ONLY discuss resume technicalities, parsing rules, and keyword optimization. If asked about life, motivation, or job market trends, refuse politely and steer back to the resume document.",
-      },
-    });
+    // Serverless is stateless, so we just return a welcome message (no persistent session)
     return "ATS Architect online. I'm ready to audit your resume logic or answer technical questions about resume parsing algorithms.";
   } catch (error) {
     console.error("Failed to start general chat:", error);
@@ -42,31 +30,12 @@ export const analyzeResume = async (
   fileData: FileData
 ): Promise<{ text: string; result: AnalysisResult }> => {
   try {
-    const ai = getAI();
-    const base64Data = fileData.base64.split(",")[1];
-
-    chatSession = ai.chats.create({
-      model: MODEL_NAME,
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-      },
+    const text = await callGeminiApi({
+      kind: "analyze",
+      base64: fileData.base64,
+      mimeType: fileData.mimeType,
+      systemPrompt: SYSTEM_PROMPT,
     });
-
-    const response = await chatSession.sendMessage({
-      message: [
-        {
-          inlineData: {
-            mimeType: fileData.mimeType,
-            data: base64Data,
-          },
-        },
-        {
-          text: "Extract signals and audit this resume. Return strict JSON.",
-        },
-      ],
-    });
-
-    const text = response.text || "";
     
     // Default fallback result
     let result: AnalysisResult = {
@@ -140,19 +109,14 @@ export const analyzeResume = async (
 };
 
 export const sendChatMessage = async (message: string): Promise<string> => {
-  if (!chatSession) {
-    await startGeneralChat();
-  }
-
-  if (!chatSession) {
-     throw new Error("Could not initialize chat session.");
-  }
-
   try {
-    const response = await chatSession.sendMessage({
-      message: message,
+    const text = await callGeminiApi({
+      kind: "chat",
+      message,
+      systemInstruction:
+        "You are a Senior ATS Architect. You DO NOT give career advice. You ONLY discuss resume technicalities, parsing rules, and keyword optimization. If asked about life, motivation, or job market trends, refuse politely and steer back to the resume document.",
     });
-    return response.text || "I couldn't generate a response.";
+    return text || "I couldn't generate a response.";
   } catch (error) {
     console.error("Chat Error:", error);
     throw error;
