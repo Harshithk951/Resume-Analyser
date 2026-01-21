@@ -1,6 +1,6 @@
 import { GoogleGenAI, Chat } from "@google/genai";
 import { SYSTEM_PROMPT } from "../constants";
-import { FileData, AnalysisResult, AnalysisSignals } from "../types";
+import { FileData, AnalysisResult } from "../types";
 import { calculateDeterministicScore, getScoreStatus } from "./scoringLogic";
 
 // Initialize Gemini
