@@ -1,80 +1,132 @@
-import { GoogleGenAI } from '@google/genai'
+import { GoogleGenerativeAI } from '@google/genai';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-type AnalyzeBody = {
-  kind: 'analyze'
-  base64: string
-  mimeType: string
-  systemPrompt: string
+// IMPORTANT: Use process.env (not import.meta.env) in serverless functions
+const API_KEY = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+
+if (!API_KEY) {
+  console.error('⚠️ API KEY NOT FOUND IN ENVIRONMENT');
 }
 
-type ChatBody = {
-  kind: 'chat'
-  message: string
-  systemInstruction?: string
-}
+const genAI = new GoogleGenerativeAI(API_KEY || '');
 
-type Body = AnalyzeBody | ChatBody
+// Disable caching for API routes
+export const config = {
+  runtime: 'nodejs',
+};
 
-// Default to a widely available model; can be overridden via GEMINI_MODEL env.
-// Note: model ids change over time; `gemini-1.5-flash-001` is no longer available on many projects.
-// Common good options: gemini-1.5-flash, gemini-1.5-pro
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS headers for development
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-function getApiKey(): string {
-  const key = process.env.GEMINI_API_KEY
-  if (!key) {
-    throw new Error('Missing GEMINI_API_KEY (set it in Vercel Environment Variables).')
+  // Handle OPTIONS preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
-  return key
-}
 
-export default async function handler(req: any, res: any) {
+  // Only allow POST
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST')
-    return res.status(405).json({ error: 'Method Not Allowed' })
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const body = (typeof req.body === 'string' ? JSON.parse(req.body) : req.body) as Body
-    const ai = new GoogleGenAI({ apiKey: getApiKey() })
+    const { kind, base64, mimeType, systemPrompt, message, systemInstruction } = req.body;
 
-    if (body.kind === 'analyze') {
-      const base64Data = body.base64.includes(',') ? body.base64.split(',')[1] : body.base64
+    console.log('📥 API Request:', { kind, hasMimeType: !!mimeType, hasMessage: !!message });
 
-      const chat = ai.chats.create({
-        model: DEFAULT_MODEL,
-        config: { systemInstruction: body.systemPrompt },
-      })
-
-      const response = await chat.sendMessage({
-        message: [
-          { inlineData: { mimeType: body.mimeType, data: base64Data } },
-          { text: 'Extract signals and audit this resume. Return strict JSON.' },
-        ],
-      })
-
-      return res.status(200).json({ text: response.text || '' })
+    if (!kind) {
+      return res.status(400).json({ error: 'Missing "kind" parameter' });
     }
 
-    if (body.kind === 'chat') {
-      const chat = ai.chats.create({
-        model: DEFAULT_MODEL,
-        config: {
-          systemInstruction:
-            body.systemInstruction ??
-            'You are a Senior ATS Architect. You DO NOT give career advice. You ONLY discuss resume technicalities, parsing rules, and keyword optimization.',
+    // Verify API key is available
+    if (!API_KEY) {
+      console.error('❌ API Key missing at runtime');
+      return res.status(500).json({ error: 'API key not configured. Please add VITE_GEMINI_API_KEY to Vercel environment variables.' });
+    }
+
+    // Handle resume analysis
+    if (kind === 'analyze') {
+      if (!base64 || !mimeType) {
+        return res.status(400).json({ error: 'Missing base64 or mimeType for analysis' });
+      }
+
+      console.log('🔍 Starting resume analysis...');
+
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-pro-latest',
+        systemInstruction: systemPrompt || 'You are a resume analyzer.',
+      });
+
+      const result = await model.generateContent([
+        {
+          inlineData: {
+            data: base64,
+            mimeType: mimeType,
+          },
         },
-      })
+        { text: 'Analyze this resume and return the JSON response as specified in your instructions.' },
+      ]);
 
-      const response = await chat.sendMessage({ message: body.message })
-      return res.status(200).json({ text: response.text || '' })
+      const response = await result.response;
+      const text = response.text();
+
+      console.log('✅ Analysis complete, response length:', text.length);
+
+      return res.status(200).json({ text });
     }
 
-    return res.status(400).json({ error: 'Invalid request body' })
-  } catch (e: any) {
-    const message = e?.message || 'Unknown error'
-    return res.status(500).json({ error: message })
+    // Handle chat
+    if (kind === 'chat') {
+      if (!message) {
+        return res.status(400).json({ error: 'Missing message for chat' });
+      }
+
+      console.log('💬 Processing chat message...');
+
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash-latest',
+        systemInstruction: systemInstruction || 'You are a helpful assistant.',
+      });
+
+      const result = await model.generateContent(message);
+      const response = await result.response;
+      const text = response.text();
+
+      console.log('✅ Chat response generated');
+
+      return res.status(200).json({ text });
+    }
+
+    return res.status(400).json({ error: `Invalid kind parameter: ${kind}` });
+
+  } catch (error: any) {
+    console.error('❌ Gemini API Error:', error);
+    
+    // Detailed error logging
+    if (error?.message) {
+      console.error('Error message:', error.message);
+    }
+    if (error?.status) {
+      console.error('Error status:', error.status);
+    }
+    
+    // Better error messages
+    if (error?.message?.includes('API key')) {
+      return res.status(401).json({ error: 'Invalid API key. Please check VITE_GEMINI_API_KEY in Vercel settings.' });
+    }
+    if (error?.message?.includes('quota') || error?.status === 429) {
+      return res.status(429).json({ error: 'API quota exceeded. Please try again later.' });
+    }
+    if (error?.status === 404) {
+      return res.status(404).json({ error: 'Model not found. Using gemini-1.5-pro-latest.' });
+    }
+    
+    return res.status(500).json({ 
+      error: error?.message || 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+    });
   }
 }
-
-

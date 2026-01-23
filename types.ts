@@ -1,12 +1,13 @@
-export interface ChatMessage {
-  role: 'user' | 'model';
-  text: string;
-  isAnalysis?: boolean;
+export enum AppStatus {
+  IDLE = 'IDLE',
+  ANALYZING = 'ANALYZING',
+  CHATTING = 'CHATTING',
+  ERROR = 'ERROR',
 }
 
 export interface CriticalIssue {
   title: string;
-  impact: number; // This will now be calculated, but kept for UI compatibility
+  impact: number;
   severity: 'critical' | 'high' | 'medium' | 'low';
   explanation: string;
   fix: string;
@@ -35,8 +36,22 @@ export interface PriorityAction {
   timeEstimate: string;
 }
 
-// Raw Signals from Gemini (No scores, just facts)
-export interface AnalysisSignals {
+export interface PenaltyOrBonus {
+  reason: string;
+  points: string;
+}
+
+export interface ScoreBreakdown {
+  baseScore: number;
+  penalties: PenaltyOrBonus[];
+  bonuses: PenaltyOrBonus[];
+  parsingScore: number;
+  contentScore: number;
+  keywordScore: number;
+  finalScore: number;
+}
+
+export interface Signals {
   parsing: {
     isReadable: boolean;
     hasTables: boolean;
@@ -47,7 +62,7 @@ export interface AnalysisSignals {
   };
   content: {
     totalBulletPoints: number;
-    bulletsWithMetrics: number; // How many bullets have % or $ or numbers
+    bulletsWithMetrics: number;
     actionVerbsCount: number;
     weakWordsCount: number;
     spellingErrors: number;
@@ -59,55 +74,27 @@ export interface AnalysisSignals {
   };
 }
 
-// Calculated Scores based on Signals
-export interface ScoringBreakdown {
-  baseScore: number;
-  penalties: {
-    reason: string;
-    points: number;
-  }[];
-  bonuses: {
-    reason: string;
-    points: number;
-  }[];
-  parsingScore: number;
-  contentScore: number;
-  keywordScore: number;
-  finalScore: number;
-}
-
 export interface AnalysisResult {
-  // Legacy fields for UI compatibility, but derived from ScoringBreakdown
   overallScore: number;
   atsScore: number;
   contentScore: number;
-  
-  // New Strict Fields
-  status: string; // "Strong Pass", "Likely Pass", "Borderline", "Reject"
-  scoreBand: string; // e.g., "75-80"
-  breakdown: ScoringBreakdown;
-  signals: AnalysisSignals;
-
+  status: 'excellent' | 'good' | 'needs_work' | 'critical';
+  scoreBand: string;
+  breakdown: ScoreBreakdown;
+  signals: Signals;
   strengths: string[];
   criticalIssues: CriticalIssue[];
   improvements: Improvement[];
   keywords: Keywords;
   priorityActions: PriorityAction[];
-  vocabulary?: {
-      weakWords: string[];
-      suggestedVerbs: string[];
-  };
-}
-
-export enum AppStatus {
-  IDLE = 'IDLE',
-  ANALYZING = 'ANALYZING',
-  CHATTING = 'CHATTING',
-  ERROR = 'ERROR'
 }
 
 export interface FileData {
-  file: File;
   base64: string;
   mimeType: string;
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  text: string;
 }

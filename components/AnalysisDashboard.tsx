@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AnalysisResult, ScoringBreakdown } from '../types';
+import { AnalysisResult, ScoreBreakdown, PenaltyOrBonus } from '../types';
 import { AlertTriangle, ArrowRight, X, Lock, Info, ChevronDown, ChevronUp, RefreshCw, CheckCircle2, Search, FileText, Download } from 'lucide-react';
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 
@@ -37,7 +37,7 @@ const CircularScore: React.FC<{ score: number; label: string; color: string; sub
   );
 };
 
-const TransparencyPanel: React.FC<{ breakdown: ScoringBreakdown }> = ({ breakdown }) => {
+const TransparencyPanel: React.FC<{ breakdown: ScoreBreakdown }> = ({ breakdown }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -62,7 +62,7 @@ const TransparencyPanel: React.FC<{ breakdown: ScoringBreakdown }> = ({ breakdow
             <h4 className="font-bold text-red-600 mb-2 flex items-center gap-2 text-sm sm:text-base"><ArrowRight className="w-4 h-4" /> Penalties Applied</h4>
             {breakdown.penalties.length > 0 ? (
               <ul className="space-y-2">
-                {breakdown.penalties.map((p, i) => (
+                {breakdown.penalties.map((p: PenaltyOrBonus, i: number) => (
                   <li key={i} className="flex justify-between text-xs sm:text-sm border-b border-slate-100 pb-1">
                     <span className="text-slate-700 pr-2">{p.reason}</span>
                     <span className="font-mono font-bold text-red-600 whitespace-nowrap">{p.points}</span>
@@ -78,7 +78,7 @@ const TransparencyPanel: React.FC<{ breakdown: ScoringBreakdown }> = ({ breakdow
             <h4 className="font-bold text-green-600 mb-2 flex items-center gap-2 text-sm sm:text-base"><ArrowRight className="w-4 h-4" /> Bonuses Earned</h4>
             {breakdown.bonuses.length > 0 ? (
               <ul className="space-y-2">
-                {breakdown.bonuses.map((p, i) => (
+                {breakdown.bonuses.map((p: PenaltyOrBonus, i: number) => (
                   <li key={i} className="flex justify-between text-xs sm:text-sm border-b border-slate-100 pb-1">
                     <span className="text-slate-700 pr-2">{p.reason}</span>
                     <span className="font-mono font-bold text-green-600 whitespace-nowrap">+{p.points}</span>
@@ -152,8 +152,8 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ result, fi
                 <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Final Verdict</h2>
                 <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                     <span className={`text-3xl sm:text-4xl font-black ${
-                        result.status === "Reject" ? "text-red-600" :
-                        result.status === "Borderline" ? "text-yellow-600" : "text-emerald-600"
+                        result.status === "critical" ? "text-red-600" :
+                        result.status === "needs_work" ? "text-yellow-600" : "text-emerald-600"
                     }`}>
                         {result.status}
                     </span>

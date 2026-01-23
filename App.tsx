@@ -10,34 +10,47 @@ const App: React.FC = () => {
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
   const [file, setFile] = useState<File | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   const handleFileSelect = async (selectedFile: File) => {
     setFile(selectedFile);
     setStatus(AppStatus.ANALYZING);
+    setErrorMessage('');
 
     try {
       // Convert file to base64
       const reader = new FileReader();
-      reader.readAsDataURL(selectedFile);
+      
       reader.onload = async () => {
         const base64 = reader.result as string;
         
         try {
-            const { result } = await analyzeResume({
-                file: selectedFile,
-                base64: base64,
-                mimeType: selectedFile.type || 'application/pdf' // Default fallback
-            });
+          const { result } = await analyzeResume({
+            file: selectedFile,
+            base64: base64,
+            mimeType: selectedFile.type || 'application/pdf'
+          });
 
-            setAnalysisResult(result);
-            setStatus(AppStatus.CHATTING);
+          setAnalysisResult(result);
+          setStatus(AppStatus.CHATTING);
         } catch (error) {
-            console.error(error);
-            setStatus(AppStatus.ERROR);
+          console.error('Analysis error:', error);
+          setErrorMessage(error instanceof Error ? error.message : 'Failed to analyze resume');
+          setStatus(AppStatus.ERROR);
         }
       };
+
+      reader.onerror = () => {
+        console.error('File reading error');
+        setErrorMessage('Failed to read file. Please try again.');
+        setStatus(AppStatus.ERROR);
+      };
+
+      reader.readAsDataURL(selectedFile);
+      
     } catch (error) {
-      console.error(error);
+      console.error('File handling error:', error);
+      setErrorMessage('Failed to process file. Please try again.');
       setStatus(AppStatus.ERROR);
     }
   };
@@ -46,6 +59,7 @@ const App: React.FC = () => {
     setStatus(AppStatus.IDLE);
     setFile(null);
     setAnalysisResult(null);
+    setErrorMessage('');
   };
 
   const renderContent = () => {
@@ -155,8 +169,9 @@ const App: React.FC = () => {
                 <div className="bg-red-50 p-6 rounded-full mb-6">
                     <Bot className="w-10 h-10 text-red-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-3">Processing Failed</h2>
-                <p className="text-slate-500 mb-8">We encountered an issue reading your file. Please ensure it's a valid PDF or text document.</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-3">Analysis Failed</h2>
+                <p className="text-slate-600 mb-2">{errorMessage || 'We encountered an issue analyzing your resume.'}</p>
+                <p className="text-slate-500 text-sm mb-8">Please check your API key and try again.</p>
                 <button 
                     onClick={resetApp}
                     className="px-8 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors font-bold flex items-center shadow-lg shadow-slate-200"
@@ -178,7 +193,7 @@ const App: React.FC = () => {
                     />
                 )}
                 {/* Always show the Chat Assistant floating on top of the dashboard */}
-                <FloatingChat />
+                <FloatingChat analysisContext={analysisResult} />
            </div>
         );
     }

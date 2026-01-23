@@ -1,6 +1,12 @@
 import { SYSTEM_PROMPT } from "../constants";
-import { FileData, AnalysisResult } from "../types";
+import { AnalysisResult } from "../types";
 import { calculateDeterministicScore, getScoreStatus } from "./scoringLogic";
+
+interface AnalyzeResumeParams {
+  file: File;
+  base64: string;
+  mimeType: string;
+}
 
 async function callGeminiApi<TBody extends Record<string, any>>(body: TBody): Promise<string> {
   const res = await fetch("/api/gemini", {
@@ -18,7 +24,7 @@ async function callGeminiApi<TBody extends Record<string, any>>(body: TBody): Pr
 
 export const startGeneralChat = async (): Promise<string> => {
   try {
-    // Serverless is stateless, so we just return a welcome message (no persistent session)
+    // Serverless is stateless, so we just return a welcome message
     return "ATS Architect online. I'm ready to audit your resume logic or answer technical questions about resume parsing algorithms.";
   } catch (error) {
     console.error("Failed to start general chat:", error);
@@ -27,36 +33,67 @@ export const startGeneralChat = async (): Promise<string> => {
 };
 
 export const analyzeResume = async (
-  fileData: FileData
-): Promise<{ text: string; result: AnalysisResult }> => {
+  { base64, mimeType }: Omit<AnalyzeResumeParams, 'file'>
+): Promise<{ result: AnalysisResult }> => {
   try {
+    // Extract base64 data (remove data URL prefix if present)
+    const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
+
     const text = await callGeminiApi({
       kind: "analyze",
-      base64: fileData.base64,
-      mimeType: fileData.mimeType,
+      base64: base64Data,
+      mimeType: mimeType || 'application/pdf',
       systemPrompt: SYSTEM_PROMPT,
     });
     
     // Default fallback result
     let result: AnalysisResult = {
-        overallScore: 0,
-        atsScore: 0,
-        contentScore: 0,
-        status: "Reject",
-        scoreBand: "<60",
-        breakdown: {
-             baseScore: 0, penalties: [], bonuses: [], parsingScore: 0, contentScore: 0, keywordScore: 0, finalScore: 0
+      overallScore: 0,
+      atsScore: 0,
+      contentScore: 0,
+      status: "critical",
+      scoreBand: "<60",
+      breakdown: {
+        baseScore: 0, 
+        penalties: [], 
+        bonuses: [], 
+        parsingScore: 0, 
+        contentScore: 0, 
+        keywordScore: 0, 
+        finalScore: 0
+      },
+      signals: {
+        parsing: { 
+          isReadable: false, 
+          hasTables: false, 
+          hasMultiColumns: false, 
+          hasGraphics: false, 
+          hasStandardHeaders: false, 
+          hasContactInHeader: false 
         },
-        signals: {
-            parsing: { isReadable: false, hasTables: false, hasMultiColumns: false, hasGraphics: false, hasStandardHeaders: false, hasContactInHeader: false },
-            content: { totalBulletPoints: 0, bulletsWithMetrics: 0, actionVerbsCount: 0, weakWordsCount: 0, spellingErrors: 0, missingSections: [] },
-            keywords: { found: [], missing: [] }
+        content: { 
+          totalBulletPoints: 0, 
+          bulletsWithMetrics: 0, 
+          actionVerbsCount: 0, 
+          weakWordsCount: 0, 
+          spellingErrors: 0, 
+          missingSections: [] 
         },
-        strengths: [],
-        criticalIssues: [],
-        improvements: [],
-        keywords: { missing: [], present: [], density: "Low", recommendation: "" },
-        priorityActions: []
+        keywords: { 
+          found: [], 
+          missing: [] 
+        }
+      },
+      strengths: [],
+      criticalIssues: [],
+      improvements: [],
+      keywords: { 
+        missing: [], 
+        present: [], 
+        density: "Low", 
+        recommendation: "" 
+      },
+      priorityActions: []
     };
 
     // Extract JSON block
@@ -67,44 +104,67 @@ export const analyzeResume = async (
         
         // --- DETERMINISTIC SCORING LAYER ---
         // We take the AI's "signals" and feed them into our math engine.
-        // We ignore any scores the AI might have Hallucinated.
+        // We ignore any scores the AI might have hallucinated.
         if (parsed.signals) {
-            const breakdown = calculateDeterministicScore(parsed.signals);
-            const statusInfo = getScoreStatus(breakdown.finalScore);
+          const breakdown = calculateDeterministicScore(parsed.signals);
+          const statusInfo = getScoreStatus(breakdown.finalScore);
+          
+          // Reconstruct the full AnalysisResult
+          result = {
+            ...result, // Defaults
+            ...parsed, // AI Feedback (strengths, improvements)
+            signals: parsed.signals,
+            breakdown: breakdown,
+            overallScore: breakdown.finalScore,
+            atsScore: breakdown.parsingScore,
+            contentScore: breakdown.contentScore,
+            status: statusInfo.label,
+            scoreBand: statusInfo.band,
             
-            // Reconstruct the full AnalysisResult
-            result = {
-                ...result, // Defaults
-                ...parsed, // AI Feedback (strengths, improvements)
-                signals: parsed.signals,
-                breakdown: breakdown,
-                overallScore: breakdown.finalScore,
-                atsScore: breakdown.parsingScore,
-                contentScore: breakdown.contentScore,
-                status: statusInfo.label,
-                scoreBand: statusInfo.band,
-                
-                // Map keyword data for UI
-                keywords: {
-                    present: parsed.signals.keywords.found,
-                    missing: parsed.signals.keywords.missing,
-                    density: breakdown.keywordScore > 70 ? "High" : "Low",
-                    recommendation: breakdown.keywordScore > 70 ? "Good keyword matching." : "Add more hard skills from the job description."
-                }
-            };
+            // Map keyword data for UI
+            keywords: {
+              present: parsed.signals.keywords.found || [],
+              missing: parsed.signals.keywords.missing || [],
+              density: breakdown.keywordScore > 70 ? "High" : breakdown.keywordScore > 40 ? "Moderate" : "Low",
+              recommendation: breakdown.keywordScore > 70 
+                ? "Good keyword matching." 
+                : "Add more hard skills from the job description."
+            },
+            
+            // Ensure arrays exist
+            strengths: parsed.strengths || [],
+            criticalIssues: parsed.criticalIssues || [],
+            improvements: parsed.improvements || [],
+            priorityActions: parsed.priorityActions || []
+          };
         }
       } catch (e) {
         console.error("Failed to parse analysis JSON", e);
+        throw new Error("AI returned invalid response format. Please try again.");
       }
+    } else {
+      throw new Error("AI response missing required JSON format");
     }
 
-    // Clean text for display (remove JSON block)
-    const cleanText = text.replace(/```json\n[\s\S]*?\n```/, "").trim();
-
-    return { text: cleanText, result };
+    return { result };
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
-    throw error;
+    
+    // Better error messages
+    if (error instanceof Error) {
+      if (error.message.includes('API key')) {
+        throw new Error('Invalid API key. Please check your configuration.');
+      }
+      if (error.message.includes('quota')) {
+        throw new Error('API quota exceeded. Please try again later.');
+      }
+      if (error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+    
+    throw new Error('Failed to analyze resume. Please try again.');
   }
 };
 
@@ -114,11 +174,31 @@ export const sendChatMessage = async (message: string): Promise<string> => {
       kind: "chat",
       message,
       systemInstruction:
-        "You are a Senior ATS Architect. You DO NOT give career advice. You ONLY discuss resume technicalities, parsing rules, and keyword optimization. If asked about life, motivation, or job market trends, refuse politely and steer back to the resume document.",
+        "You are a Senior ATS Architect. You DO NOT give career advice. You ONLY discuss resume technicalities, parsing rules, and keyword optimization. If asked about life, motivation, or job market trends, refuse politely and steer back to the resume document. Keep responses under 3 sentences unless detailed explanation is requested.",
     });
     return text || "I couldn't generate a response.";
   } catch (error) {
     console.error("Chat Error:", error);
-    throw error;
+    return "I'm having trouble connecting right now. Please try again in a moment.";
+  }
+};
+
+// Helper function for chat (if needed in FloatingChat component)
+export const chatWithAI = async (message: string, context?: AnalysisResult): Promise<string> => {
+  try {
+    const contextPrompt = context 
+      ? `\n\nContext: User's resume has overall score of ${context.overallScore}/100, ATS score of ${context.atsScore}/100, content score of ${context.contentScore}/100.` 
+      : '';
+    
+    const text = await callGeminiApi({
+      kind: "chat",
+      message: message + contextPrompt,
+      systemInstruction:
+        "You are a Senior ATS Architect. You DO NOT give career advice. You ONLY discuss resume technicalities, parsing rules, and keyword optimization. Keep responses concise (2-3 sentences) unless detailed explanation is requested.",
+    });
+    return text || "I couldn't generate a response.";
+  } catch (error) {
+    console.error("Chat Error:", error);
+    return "I'm having trouble connecting right now. Please try again in a moment.";
   }
 };
