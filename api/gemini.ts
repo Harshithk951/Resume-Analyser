@@ -16,8 +16,9 @@ type ChatBody = {
 type Body = AnalyzeBody | ChatBody
 
 // Default to a widely available model; can be overridden via GEMINI_MODEL env.
-// Common good options: gemini-1.5-flash-001, gemini-1.5-pro-latest
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash-001'
+// Note: model ids change over time; `gemini-1.5-flash-001` is no longer available on many projects.
+// Common good options: gemini-1.5-flash, gemini-1.5-pro
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
 
 function getApiKey(): string {
   const key = process.env.GEMINI_API_KEY
