@@ -91,11 +91,12 @@ npm install
 
 ### 2. Environment Setup
 
-Create a `.env` file in the root directory:
+This repo is configured to load Vite env files from `env/` (see `env/README.md` and `vite.config.ts`). For Gemini API credentials, use **either** `VITE_API_KEY` (direct browser key; recommended only for local/dev) **or** the **serverless proxy** (`/api/gemini`)—`env/README.md` shows the supported options and where to put them.
 
-```env
-# Get key from https://aistudio.google.com/
-VITE_API_KEY=your_gemini_api_key_here
+If you need a base path (GitHub Pages), you can also set it inline when running commands:
+
+```bash
+VITE_BASE=/ResumeOptima/ npm run build
 ```
 
 ### 3. Run Development Server
