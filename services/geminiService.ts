@@ -26,7 +26,7 @@ async function callGeminiApi<TBody extends Record<string, any>>(body: TBody): Pr
     
     if (kind === 'analyze') {
       const result = await genAI.models.generateContent({
-        model: 'gemini-1.5-pro',
+        model: 'gemini-2.0-flash-exp',
         contents: [
           {
             role: 'user',
@@ -50,7 +50,7 @@ async function callGeminiApi<TBody extends Record<string, any>>(body: TBody): Pr
     
     if (kind === 'chat') {
       const result = await genAI.models.generateContent({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash-exp',
         contents: [
           {
             role: 'user',

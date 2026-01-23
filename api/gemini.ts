@@ -56,7 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log('🔍 Starting resume analysis...');
 
       const result = await genAI.models.generateContent({
-        model: 'gemini-1.5-pro',
+        model: 'gemini-2.0-flash-exp',
         contents: [
           {
             role: 'user',
@@ -93,7 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log('💬 Processing chat message...');
 
       const result = await genAI.models.generateContent({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash-exp',
         contents: [
           {
             role: 'user',
