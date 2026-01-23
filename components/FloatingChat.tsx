@@ -79,6 +79,8 @@ export const FloatingChat: React.FC = () => {
                 </div>
                 <button 
                 onClick={toggleChat}
+                aria-label="Minimize chat"
+                title="Minimize chat"
                 className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-300 hover:text-white relative z-10"
                 >
                 <ChevronDown className="w-5 h-5" />
@@ -144,6 +146,8 @@ export const FloatingChat: React.FC = () => {
                 <button
                     onClick={handleSend}
                     disabled={!input.trim() || isLoading}
+                    aria-label="Send message"
+                    title="Send message"
                     className={`absolute right-2 p-2 rounded-lg transition-all duration-200 ${
                     input.trim() 
                         ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 hover:scale-105 active:scale-95' 
@@ -168,6 +172,8 @@ export const FloatingChat: React.FC = () => {
         )}
         <button
             onClick={toggleChat}
+            aria-label={isOpen ? "Close chat" : "Open chat"}
+            title={isOpen ? "Close chat" : "Open chat"}
             className={`flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-2xl shadow-indigo-600/30 transition-all duration-300 relative overflow-hidden ${
             isOpen 
                 ? 'bg-slate-900 text-white rotate-90 scale-90' 

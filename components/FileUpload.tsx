@@ -34,8 +34,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect }) => {
           </p>
           
           <div className="flex items-center space-x-6">
-             <span className="flex items-center text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-widest">
-                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2 text-slate-300"/> Supports PDF & DOCX
+             <span className="flex items-center text-[10px] sm:text-xs text-slate-600 font-bold uppercase tracking-widest">
+                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2 text-slate-500"/> Supports PDF & DOCX
              </span>
           </div>
         </div>

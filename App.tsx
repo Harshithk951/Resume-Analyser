@@ -111,6 +111,7 @@ const App: React.FC = () => {
                     </div>
 
                     {/* Steps */}
+                    <h2 className="sr-only">How it works</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12 w-full max-w-[90%] xl:max-w-[1400px] mx-auto">
                         {/* Step 1 */}
                         <div className={`flex flex-col items-center group transition-opacity duration-500 ${status === AppStatus.ANALYZING ? 'opacity-50' : 'opacity-100'}`}>
