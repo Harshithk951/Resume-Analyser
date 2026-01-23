@@ -1,6 +1,17 @@
 import { SYSTEM_PROMPT } from "../constants";
 import { AnalysisResult } from "../types";
 import { calculateDeterministicScore, getScoreStatus } from "./scoringLogic";
+import { GoogleGenAI } from '@google/genai';
+
+// Check if we're in development mode
+const isDev = import.meta.env.DEV;
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+// Initialize Gemini client for direct browser calls in dev mode
+let genAI: GoogleGenAI | null = null;
+if (isDev && API_KEY) {
+  genAI = new GoogleGenAI({ apiKey: API_KEY });
+}
 
 interface AnalyzeResumeParams {
   file: File;
@@ -9,6 +20,52 @@ interface AnalyzeResumeParams {
 }
 
 async function callGeminiApi<TBody extends Record<string, any>>(body: TBody): Promise<string> {
+  // In development with API key, call Gemini directly from browser
+  if (isDev && genAI) {
+    const { kind, base64, mimeType, systemPrompt, message, systemInstruction } = body;
+    
+    if (kind === 'analyze') {
+      const result = await genAI.models.generateContent({
+        model: 'gemini-1.5-pro',
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  data: base64,
+                  mimeType: mimeType,
+                },
+              },
+              { text: 'Analyze this resume and return the JSON response as specified in your instructions.' },
+            ],
+          },
+        ],
+        config: {
+          systemInstruction: systemPrompt || 'You are a resume analyzer.',
+        },
+      });
+      return result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
+    
+    if (kind === 'chat') {
+      const result = await genAI.models.generateContent({
+        model: 'gemini-1.5-flash',
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: message }],
+          },
+        ],
+        config: {
+          systemInstruction: systemInstruction || 'You are a helpful assistant.',
+        },
+      });
+      return result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
+  }
+  
+  // In production, use the serverless API
   const res = await fetch("/api/gemini", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
