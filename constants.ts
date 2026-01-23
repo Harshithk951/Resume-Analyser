@@ -30,7 +30,9 @@ REQUIRED JSON STRUCTURE:
     {
       "title": string,
       "impact": number,
-      "severity": "critical" | "high" | "medium"
+      "severity": "critical" | "high" | "medium",
+      "explanation": string,
+      "fix": string
     }
   ],
   "improvements": [
@@ -38,7 +40,8 @@ REQUIRED JSON STRUCTURE:
       "section": string,
       "before": string,
       "after": string,
-      "impact": number
+      "impact": number,
+      "reasoning": string
     }
   ],
   "priorityActions": [

@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // IMPORTANT: Use process.env (not import.meta.env) in serverless functions
@@ -8,7 +8,7 @@ if (!API_KEY) {
   console.error('⚠️ API KEY NOT FOUND IN ENVIRONMENT');
 }
 
-const genAI = new GoogleGenerativeAI(API_KEY || '');
+const genAI = new GoogleGenAI({ apiKey: API_KEY || '' });
 
 // Disable caching for API routes
 export const config = {
@@ -55,23 +55,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       console.log('🔍 Starting resume analysis...');
 
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-pro-latest',
-        systemInstruction: systemPrompt || 'You are a resume analyzer.',
+      const result = await genAI.models.generateContent({
+        model: 'gemini-1.5-pro',
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  data: base64,
+                  mimeType: mimeType,
+                },
+              },
+              { text: 'Analyze this resume and return the JSON response as specified in your instructions.' },
+            ],
+          },
+        ],
+        config: {
+          systemInstruction: systemPrompt || 'You are a resume analyzer.',
+        },
       });
 
-      const result = await model.generateContent([
-        {
-          inlineData: {
-            data: base64,
-            mimeType: mimeType,
-          },
-        },
-        { text: 'Analyze this resume and return the JSON response as specified in your instructions.' },
-      ]);
-
-      const response = await result.response;
-      const text = response.text();
+      const response = result;
+      const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
       console.log('✅ Analysis complete, response length:', text.length);
 
@@ -86,14 +92,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       console.log('💬 Processing chat message...');
 
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash-latest',
-        systemInstruction: systemInstruction || 'You are a helpful assistant.',
+      const result = await genAI.models.generateContent({
+        model: 'gemini-1.5-flash',
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: message }],
+          },
+        ],
+        config: {
+          systemInstruction: systemInstruction || 'You are a helpful assistant.',
+        },
       });
 
-      const result = await model.generateContent(message);
-      const response = await result.response;
-      const text = response.text();
+      const response = result;
+      const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
       console.log('✅ Chat response generated');
 
