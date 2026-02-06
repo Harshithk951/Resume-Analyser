@@ -176,7 +176,7 @@ export const analyzeResume = async (
             atsScore: breakdown.parsingScore,
             contentScore: breakdown.contentScore,
             status: statusInfo.label,
-            scoreBand: statusInfo.band,
+            scoreBand: statusInfo.label,
 
             // Map keyword data for UI
             keywords: {
