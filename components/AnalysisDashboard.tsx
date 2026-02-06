@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { AnalysisResult, ScoreBreakdown, PenaltyOrBonus } from '../types';
-import { AlertTriangle, ArrowRight, X, Lock, Info, ChevronDown, ChevronUp, RefreshCw, CheckCircle2, Search, FileText, Download } from 'lucide-react';
+import { AlertTriangle, ArrowRight, X, Lock, Info, ChevronDown, ChevronUp, RefreshCw, CheckCircle2, Search, FileText, Download, Copy } from 'lucide-react';
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
+import { copyToClipboard } from '../utils/clipboard';
+import { Toast } from './Toast';
 
 interface AnalysisDashboardProps {
   result: AnalysisResult;
@@ -100,6 +102,20 @@ const TransparencyPanel: React.FC<{ breakdown: ScoreBreakdown }> = ({ breakdown 
 };
 
 export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ result, fileName, onReset }) => {
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  const handleCopy = async (text: string) => {
+    const success = await copyToClipboard(text);
+    if (success) {
+      setToastMessage('Copied to clipboard!');
+      setShowToast(true);
+    } else {
+      setToastMessage('Failed to copy');
+      setShowToast(true);
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -166,8 +182,8 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ result, fi
                 <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Final Verdict</h2>
                 <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                   <span className={`text-3xl sm:text-4xl font-black ${result.status === "critical" ? "bg-gradient-to-r from-red-600 to-red-500" :
-                      result.status === "needs_work" ? "bg-gradient-to-r from-yellow-600 to-orange-500" :
-                        "bg-gradient-to-r from-emerald-600 to-green-500"
+                    result.status === "needs_work" ? "bg-gradient-to-r from-yellow-600 to-orange-500" :
+                      "bg-gradient-to-r from-emerald-600 to-green-500"
                     } bg-clip-text text-transparent drop-shadow`}>
                     {result.status}
                   </span>
@@ -265,7 +281,17 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ result, fi
                       </div>
 
                       <div className="bg-green-50/60 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-green-100/60 h-full print:bg-white print:border-slate-200">
-                        <span className="text-[10px] sm:text-xs font-bold text-green-600 uppercase tracking-wider mb-2 block">Optimized</span>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] sm:text-xs font-bold text-green-600 uppercase tracking-wider">Optimized</span>
+                          <button
+                            onClick={() => handleCopy(imp.after)}
+                            className="px-2 py-1 bg-white/60 backdrop-blur-md rounded-lg text-[10px] font-semibold text-green-700 hover:bg-white/80 transition-all flex items-center gap-1 print:hidden"
+                            title="Copy optimized text"
+                          >
+                            <Copy className="w-3 h-3" />
+                            Copy
+                          </button>
+                        </div>
                         <p className="text-slate-800 font-medium text-xs sm:text-sm">{imp.after}</p>
                       </div>
                     </div>
@@ -329,6 +355,15 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ result, fi
       <div className="text-center mt-8 sm:mt-12 mb-4 px-4 no-print">
         <p className="text-slate-500 text-[10px] sm:text-xs font-medium">Engineered with Gemini 3 Pro Vision • Deterministic Scoring Engine v1.0</p>
       </div>
+
+      {/* Toast Notification */}
+      {showToast && (
+        <Toast
+          message={toastMessage}
+          type="success"
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import { SYSTEM_PROMPT } from "../constants";
-import { AnalysisResult } from "../types";
+import { AnalysisResult, ATSType } from "../types";
 import { calculateDeterministicScore, getScoreStatus } from "./scoringLogic";
 import { GoogleGenAI } from '@google/genai';
 
@@ -14,9 +14,10 @@ if (isDev && API_KEY) {
 }
 
 interface AnalyzeResumeParams {
-  file: File;
   base64: string;
   mimeType: string;
+  atsType?: ATSType;
+  jobDescription?: string;
 }
 
 async function callGeminiApi<TBody extends Record<string, any>>(body: TBody): Promise<string> {
@@ -90,7 +91,7 @@ export const startGeneralChat = async (): Promise<string> => {
 };
 
 export const analyzeResume = async (
-  { base64, mimeType }: Omit<AnalyzeResumeParams, 'file'>
+  { base64, mimeType, atsType = ATSType.MODERN, jobDescription: _jobDescription }: AnalyzeResumeParams
 ): Promise<{ result: AnalysisResult }> => {
   try {
     // Extract base64 data (remove data URL prefix if present)
@@ -163,7 +164,7 @@ export const analyzeResume = async (
         // We take the AI's "signals" and feed them into our math engine.
         // We ignore any scores the AI might have hallucinated.
         if (parsed.signals) {
-          const breakdown = calculateDeterministicScore(parsed.signals);
+          const breakdown = calculateDeterministicScore(parsed.signals, atsType);
           const statusInfo = getScoreStatus(breakdown.finalScore);
 
           // Reconstruct the full AnalysisResult

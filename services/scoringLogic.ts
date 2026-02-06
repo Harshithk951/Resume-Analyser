@@ -1,3 +1,5 @@
+import { ATSType } from '../types';
+
 interface Signals {
   parsing: {
     isReadable: boolean;
@@ -31,7 +33,7 @@ interface ScoreBreakdown {
   finalScore: number;
 }
 
-export function calculateDeterministicScore(signals: Signals): ScoreBreakdown {
+export function calculateDeterministicScore(signals: Signals, atsType: ATSType = ATSType.MODERN): ScoreBreakdown {
   // ULTRA-STRICT: Start very low - must earn every point (MNC-FOCUSED)
   let parsingScore = 70;  // Start at 70
   let contentScore = 25;  // Reduced from 30 - even stricter
@@ -47,25 +49,33 @@ export function calculateDeterministicScore(signals: Signals): ScoreBreakdown {
     penalties.push("Unreadable format (-50)");
   }
 
-  // Stricter penalties for ATS issues
-  if (signals.parsing.hasTables) {
-    parsingScore -= 20;
-    penalties.push("Tables detected (-20)");
-  }
-
-  if (signals.parsing.hasMultiColumns) {
-    parsingScore -= 15;
-    penalties.push("Multi-column layout (-15)");
-  }
-
-  if (signals.parsing.hasGraphics) {
-    parsingScore -= 15;
-    penalties.push("Graphics/images (-15)");
-  }
-
-  if (signals.parsing.hasContactInHeader) {
-    parsingScore -= 15;
-    penalties.push("Contact in header (-15)");
+  // ATS-SPECIFIC PENALTIES: Different rules for Old School vs Modern ATS
+  if (atsType === ATSType.OLD_SCHOOL) {
+    // Old School ATS (Taleo, SAP) - Very strict on formatting
+    if (signals.parsing.hasTables) {
+      parsingScore -= 20;
+      penalties.push("Tables detected - Old School ATS cannot parse (-20)");
+    }
+    if (signals.parsing.hasMultiColumns) {
+      parsingScore -= 15;
+      penalties.push("Multi-column layout - Old School ATS fails (-15)");
+    }
+    if (signals.parsing.hasGraphics) {
+      parsingScore -= 15;
+      penalties.push("Graphics/images - Old School ATS rejects (-15)");
+    }
+    if (signals.parsing.hasContactInHeader) {
+      parsingScore -= 15;
+      penalties.push("Contact in header - Old School ATS misses it (-15)");
+    }
+  } else {
+    // Modern ATS (Greenhouse, Lever) - More forgiving on layout
+    // Tables and columns are OK, only penalize graphics slightly
+    if (signals.parsing.hasGraphics) {
+      parsingScore -= 5;
+      penalties.push("Graphics detected - may slow parsing (-5)");
+    }
+    // Modern ATS can handle tables and columns, no penalty
   }
 
   // REDUCED bonuses - was +15, now +8

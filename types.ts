@@ -5,6 +5,11 @@ export enum AppStatus {
   ERROR = 'ERROR',
 }
 
+export enum ATSType {
+  OLD_SCHOOL = 'OLD_SCHOOL', // Taleo, SAP SuccessFactors
+  MODERN = 'MODERN', // Greenhouse, Lever, Workday Cloud
+}
+
 export interface CriticalIssue {
   title: string;
   impact: number;
@@ -26,6 +31,12 @@ export interface Keywords {
   present: string[];
   density: string;
   recommendation: string;
+}
+
+export interface JDKeywords {
+  matched: string[];
+  missing: string[];
+  matchPercentage: number;
 }
 
 export interface PriorityAction {
@@ -87,6 +98,9 @@ export interface AnalysisResult {
   improvements: Improvement[];
   keywords: Keywords;
   priorityActions: PriorityAction[];
+  // Optional JD comparison fields
+  jdMatchScore?: number;
+  jdKeywords?: JDKeywords;
 }
 
 export interface FileData {
