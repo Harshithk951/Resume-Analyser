@@ -211,9 +211,60 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ result, fi
               </div>
             </div>
 
+            {/* JD Keywords Section (Conditional) */}
+            {result.jdKeywords && (
+              <div className="mb-8 page-break-inside-avoid">
+                <div className="flex items-center justify-between mb-6 sm:mb-8">
+                  <h3 className="text-xl sm:text-2xl font-bold text-slate-800 flex items-center gap-3">
+                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" /> Job Description Match
+                  </h3>
+                  <span className={`px-2 sm:px-3 py-1 rounded-xl text-[10px] sm:text-xs font-bold border backdrop-blur-sm shadow-sm ${result.jdKeywords.matchPercentage >= 80
+                      ? "bg-green-100/60 border-green-200/60 text-green-700"
+                      : result.jdKeywords.matchPercentage >= 60
+                        ? "bg-yellow-100/60 border-yellow-200/60 text-yellow-700"
+                        : "bg-red-100/60 border-red-200/60 text-red-700"
+                    }`}>
+                    Match: {result.jdKeywords.matchPercentage}%
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+                  {/* Matched JD Requirements */}
+                  <div className="border border-white/60 bg-green-50/50 backdrop-blur-lg rounded-2xl p-4 sm:p-6 shadow-lg">
+                    <div className="flex items-center gap-2 mb-4 text-green-800 font-bold text-xs sm:text-sm uppercase tracking-wider">
+                      <CheckCircle2 className="w-4 h-4 text-green-600" /> Matched Requirements ({result.jdKeywords.matched.length})
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {result.jdKeywords.matched.map((kw, i) => (
+                        <span key={i} className="bg-green-100/70 backdrop-blur-sm text-green-800 px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold print:border print:border-green-300 shadow-sm">
+                          {kw}
+                        </span>
+                      ))}
+                      {result.jdKeywords.matched.length === 0 && <span className="text-slate-400 italic text-xs sm:text-sm">No JD requirements matched.</span>}
+                    </div>
+                  </div>
+
+                  {/* Missing JD Requirements */}
+                  <div className="border border-white/60 bg-red-50/50 backdrop-blur-lg rounded-2xl p-4 sm:p-6 print:bg-white shadow-lg">
+                    <div className="flex items-center gap-2 mb-4 text-red-800 font-bold text-xs sm:text-sm uppercase tracking-wider">
+                      <AlertTriangle className="w-4 h-4 text-red-500" /> Missing Requirements ({result.jdKeywords.missing.length})
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {result.jdKeywords.missing.map((kw, i) => (
+                        <span key={i} className="bg-red-100/70 backdrop-blur-sm border border-red-200/60 text-red-700 px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold shadow-sm">
+                          {kw}
+                        </span>
+                      ))}
+                      {result.jdKeywords.missing.length === 0 && <span className="text-green-600 italic text-xs sm:text-sm">All JD requirements met!</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Scores Section - Glass Circles */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-2 sm:gap-8 md:gap-12 mb-8 page-break-inside-avoid">
-              <div className="col-span-2 md:col-span-1 flex justify-center">
+            <div className={`grid ${result.jdMatchScore ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-3'} gap-y-6 gap-x-2 sm:gap-8 md:gap-12 mb-8 page-break-inside-avoid`}>
+              <div className={`${result.jdMatchScore ? '' : 'col-span-2 md:col-span-1'} flex justify-center`}>
                 <CircularScore score={result.overallScore} label="Overall Score" color="#6366f1" subLabel={result.scoreBand} />
               </div>
               <div className="flex justify-center">
@@ -222,6 +273,11 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ result, fi
               <div className="flex justify-center">
                 <CircularScore score={result.contentScore} label="Content Impact" color="#10b981" subLabel="Weight: 40%" />
               </div>
+              {result.jdMatchScore && (
+                <div className="flex justify-center">
+                  <CircularScore score={result.jdMatchScore} label="JD Match" color="#f59e0b" subLabel="ALIGNMENT" />
+                </div>
+              )}
             </div>
 
             <div className="page-break-inside-avoid">

@@ -91,17 +91,40 @@ export const startGeneralChat = async (): Promise<string> => {
 };
 
 export const analyzeResume = async (
-  { base64, mimeType, atsType = ATSType.MODERN, jobDescription: _jobDescription }: AnalyzeResumeParams
+  { base64, mimeType, atsType = ATSType.MODERN, jobDescription }: AnalyzeResumeParams
 ): Promise<{ result: AnalysisResult }> => {
   try {
     // Extract base64 data (remove data URL prefix if present)
     const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
 
+    // Enhance prompt with JD if provided
+    let enhancedPrompt = SYSTEM_PROMPT;
+    if (jobDescription && jobDescription.trim()) {
+      enhancedPrompt = `${SYSTEM_PROMPT}
+
+---
+
+## JOB DESCRIPTION PROVIDED:
+
+The user has provided the following job description. You MUST analyze the resume against this specific JD:
+
+"""
+${jobDescription.trim()}
+"""
+
+**CRITICAL**: Extract key requirements from this JD and populate the "jdKeywords" field in your response with:
+- matched: Requirements from the JD that are clearly demonstrated in the resume
+- missing: Requirements from the JD that are NOT found in the resume
+- matchPercentage: Calculate (matched / total requirements) * 100
+
+Be thorough and specific. This JD analysis is the PRIMARY evaluation criteria.`;
+    }
+
     const text = await callGeminiApi({
       kind: "analyze",
       base64: base64Data,
       mimeType: mimeType || 'application/pdf',
-      systemPrompt: SYSTEM_PROMPT,
+      systemPrompt: enhancedPrompt,
     });
 
     // Default fallback result
@@ -165,19 +188,40 @@ export const analyzeResume = async (
         // We ignore any scores the AI might have hallucinated.
         if (parsed.signals) {
           const breakdown = calculateDeterministicScore(parsed.signals, atsType);
-          const statusInfo = getScoreStatus(breakdown.finalScore);
+
+          // Apply JD Match Bonus if JD provided
+          let finalScore = breakdown.finalScore;
+          const bonuses = [...breakdown.bonuses];
+
+          if (parsed.jdKeywords && parsed.jdKeywords.matchPercentage) {
+            const jdMatch = parsed.jdKeywords.matchPercentage;
+            if (jdMatch >= 80) {
+              bonuses.push("Excellent JD match: 80%+ alignment (+15)");
+              finalScore = Math.min(100, finalScore + 15);
+            } else if (jdMatch >= 60) {
+              bonuses.push("Good JD match: 60%+ alignment (+10)");
+              finalScore = Math.min(100, finalScore + 10);
+            } else if (jdMatch >= 40) {
+              bonuses.push("Moderate JD match: 40%+ alignment (+5)");
+              finalScore = Math.min(100, finalScore + 5);
+            }
+          }
 
           // Reconstruct the full AnalysisResult
           result = {
             ...result, // Defaults
             ...parsed, // AI Feedback (strengths, improvements)
             signals: parsed.signals,
-            breakdown: breakdown,
-            overallScore: breakdown.finalScore,
+            breakdown: {
+              ...breakdown,
+              bonuses,
+              finalScore
+            },
+            overallScore: finalScore,
             atsScore: breakdown.parsingScore,
-            contentScore: breakdown.contentScore,
-            status: statusInfo.label,
-            scoreBand: statusInfo.label,
+            contentScore: breakdown.keywordScore,
+            status: getScoreStatus(finalScore).label,
+            scoreBand: getScoreStatus(finalScore).label,
 
             // Map keyword data for UI
             keywords: {
@@ -188,6 +232,12 @@ export const analyzeResume = async (
                 ? "Good keyword matching."
                 : "Add more hard skills from the job description."
             },
+
+            // JD Keywords (if provided)
+            ...(parsed.jdKeywords && {
+              jdKeywords: parsed.jdKeywords,
+              jdMatchScore: Math.round(parsed.jdKeywords.matchPercentage || 0)
+            }),
 
             // Ensure arrays exist
             strengths: parsed.strengths || [],

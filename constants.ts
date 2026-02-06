@@ -29,6 +29,11 @@ REQUIRED JSON STRUCTURE:
       "missing": string[]
     }
   },
+  "jdKeywords": {
+    "matched": string[],
+    "missing": string[],
+    "matchPercentage": number
+  },
   "strengths": string[],
   "criticalIssues": [
     {
@@ -136,7 +141,38 @@ COMPREHENSIVE ANALYSIS GUIDELINES:
 - System design and architecture skills
 - **Be SPECIFIC about what top companies need**
 
-## 3.5. MNC-SPECIFIC EVALUATION (CRITICAL)
+## 3.5. JOB DESCRIPTION KEYWORD ANALYSIS (WHEN PROVIDED)
+
+**IMPORTANT**: If a job description is provided alongside the resume, you MUST analyze the JD and compare it against the resume.
+
+**jdKeywords.matched**: 
+- Extract 10-20 key requirements from the job description (skills, technologies, qualifications, experience)
+- Identify which of these requirements are CLEARLY demonstrated in the resume
+- Look for exact matches or strong equivalents
+- Examples: If JD asks for "React", look for "React", "React.js", "ReactJS" in resume
+- Include both technical skills (Python, AWS) and soft skills (leadership, communication) if mentioned in JD
+
+**jdKeywords.missing**: 
+- List JD requirements that are NOT found in the resume
+- Be strict - only mark as "matched" if there's clear evidence in the resume
+- These are critical gaps the candidate should address
+
+**jdKeywords.matchPercentage**: 
+- Calculate: (matched keywords / total JD keywords) * 100
+- Be realistic and fair
+- Example: If JD has 15 key requirements and resume demonstrates 12, that's 80%
+- Round to nearest integer
+
+**JD Analysis Example:**
+If JD says: "Looking for Senior React Developer with 5+ years experience in TypeScript, Node.js, AWS, and leading teams"
+
+Extract keywords: ["React", "TypeScript", "Node.js", "AWS", "5+ years experience", "team leadership"]
+
+Then check resume:
+- matched: ["React", "TypeScript", "Node.js", "team leadership"] (4/6 = 67%)
+- missing: ["AWS", "5+ years experience"]
+
+## 3.6. MNC-SPECIFIC EVALUATION (CRITICAL)
 
 **SCALE INDICATORS** (Look for these - they're ESSENTIAL for top companies):
 - User base: "millions of users", "100K+ daily active users"
