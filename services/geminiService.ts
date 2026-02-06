@@ -22,11 +22,10 @@ if (isDev && API_KEYS.length > 0) {
   });
 }
 
-const getGenAIClient = () => {
+const getGenAIClientByIndex = (index: number) => {
   if (!GoogleGenAI || API_KEYS.length === 0) return null;
-  // Simple random rotation to distribute load
-  const randomKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
-  return new GoogleGenAI({ apiKey: randomKey });
+  const key = API_KEYS[index % API_KEYS.length];
+  return new GoogleGenAI({ apiKey: key });
 };
 
 interface AnalyzeResumeParams {
@@ -38,50 +37,80 @@ interface AnalyzeResumeParams {
 
 async function callGeminiApi<TBody extends Record<string, any>>(body: TBody): Promise<string> {
   // In development with API key, call Gemini directly from browser
-  const client = getGenAIClient();
+  if (isDev && API_KEYS.length > 0) {
+    let lastError: any;
 
-  if (isDev && client) {
-    const { kind, base64, mimeType, systemPrompt, message, systemInstruction } = body;
+    // Try each key starting from a random index
+    const startIndex = Math.floor(Math.random() * API_KEYS.length);
 
-    if (kind === 'analyze') {
-      const result = await client.models.generateContent({
-        model: 'gemini-flash-latest',
-        contents: [
-          {
-            role: 'user',
-            parts: [
+    for (let i = 0; i < API_KEYS.length; i++) {
+      const currentIndex = startIndex + i;
+      const client = getGenAIClientByIndex(currentIndex);
+
+      if (!client) continue;
+
+      try {
+        const { kind, base64, mimeType, systemPrompt, message, systemInstruction } = body;
+
+        if (kind === 'analyze') {
+          const result = await client.models.generateContent({
+            model: 'gemini-flash-latest',
+            contents: [
               {
-                inlineData: {
-                  data: base64,
-                  mimeType: mimeType,
-                },
+                role: 'user',
+                parts: [
+                  {
+                    inlineData: {
+                      data: base64,
+                      mimeType: mimeType,
+                    },
+                  },
+                  { text: 'Analyze this resume and return the JSON response as specified in your instructions.' },
+                ],
               },
-              { text: 'Analyze this resume and return the JSON response as specified in your instructions.' },
             ],
-          },
-        ],
-        config: {
-          systemInstruction: systemPrompt || 'You are a resume analyzer.',
-        },
-      });
-      return result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            config: {
+              systemInstruction: systemPrompt || 'You are a resume analyzer.',
+            },
+          });
+          return result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        }
+
+        if (kind === 'chat') {
+          const result = await client.models.generateContent({
+            model: 'gemini-flash-latest',
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: message }],
+              },
+            ],
+            config: {
+              systemInstruction: systemInstruction || 'You are a helpful assistant.',
+            },
+          });
+          return result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        }
+      } catch (error: any) {
+        lastError = error;
+        // If it's a quota error (429) or Service Warning, try next key
+        const isQuotaError =
+          error.message?.includes('429') ||
+          error.message?.includes('quota') ||
+          error.response?.status === 429;
+
+        if (isQuotaError && i < API_KEYS.length - 1) {
+          console.warn(`API key at index ${currentIndex % API_KEYS.length} exhausted. Switching to next key...`);
+          continue; // Try next loop iteration (next key)
+        }
+
+        // If it's not a quota error, or we've tried all keys, throw the error
+        throw error;
+      }
     }
 
-    if (kind === 'chat') {
-      const result = await client.models.generateContent({
-        model: 'gemini-flash-latest',
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: message }],
-          },
-        ],
-        config: {
-          systemInstruction: systemInstruction || 'You are a helpful assistant.',
-        },
-      });
-      return result.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    }
+    // If loop finishes without success (should be caught by throw inside), throw last error
+    if (lastError) throw lastError;
   }
 
   // In production, use the serverless API
