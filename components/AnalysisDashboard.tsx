@@ -123,11 +123,11 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = React.memo(({
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 pb-20 print:bg-white print:pb-0">
       {/* Header Section - Lighter gradient */}
-      <div className="w-full bg-gradient-to-r from-indigo-500/90 via-purple-500/90 to-pink-500/90 backdrop-blur-xl text-white pt-6 pb-20 md:pt-8 md:pb-32 px-4 sm:px-6 header-bg print:hidden relative overflow-hidden">
+      <div className="w-full bg-gradient-to-r from-indigo-500/90 via-purple-500/90 to-pink-500/90 backdrop-blur-lg text-white pt-6 pb-20 md:pt-8 md:pb-32 px-4 sm:px-6 header-bg print:hidden relative overflow-hidden">
         {/* Animated background shapes - using hardware acceleration */}
-        <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse will-change-transform"></div>
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse delay-1000 will-change-transform"></div>
+        <div className="absolute inset-0 overflow-hidden opacity-10 pointer-events-none">
+          <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl will-change-transform"></div>
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-white rounded-full blur-3xl delay-1000 will-change-transform"></div>
         </div>
 
         <div className="w-full max-w-[95%] 2xl:max-w-[1800px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
@@ -163,9 +163,9 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = React.memo(({
 
       {/* Main Content Card - Glass Effect */}
       <div className="w-full max-w-[95%] 2xl:max-w-[1800px] mx-auto px-3 sm:px-4 md:px-6 -mt-10 md:-mt-20 dashboard-container print:mt-0 print:px-0">
-        <div className="bg-white/70 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-purple-200/50 p-4 sm:p-8 md:p-12 border border-white/60 relative overflow-hidden print:shadow-none print:rounded-none print:border-none print:bg-white">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-purple-200/50 p-4 sm:p-8 md:p-12 border border-white/60 relative overflow-hidden print:shadow-none print:rounded-none print:border-none print:bg-white">
           {/* Subtle gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-purple-50/30 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 via-transparent to-purple-50/20 pointer-events-none"></div>
 
           <div className="relative z-10">
             {/* Top Status Bar */}

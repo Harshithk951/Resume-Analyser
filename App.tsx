@@ -1,14 +1,11 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useCallback } from 'react';
 import { FileUpload } from './components/FileUpload';
 // Lazy load the dashboard
 const AnalysisDashboard = React.lazy(() => import('./components/AnalysisDashboard').then(module => ({ default: module.AnalysisDashboard })));
 import { FloatingChat } from './components/FloatingChat';
 import { analyzeResume } from './services/geminiService';
 import { AppStatus, AnalysisResult, ATSType } from './types';
-import Bot from 'lucide-react/dist/esm/icons/bot';
-import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
-import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
-import Zap from 'lucide-react/dist/esm/icons/zap';
+import { Bot, RefreshCw, Sparkles, Zap } from 'lucide-react';
 
 const App: React.FC = () => {
     // ... existing state ...
@@ -64,12 +61,12 @@ const App: React.FC = () => {
         }
     };
 
-    const resetApp = () => {
+    const resetApp = useCallback(() => {
         setStatus(AppStatus.IDLE);
         setFile(null);
         setAnalysisResult(null);
         setErrorMessage('');
-    };
+    }, []);
 
     const renderContent = () => {
         // Shared Layout for Landing (IDLE) and Analyzing States
