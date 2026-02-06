@@ -23,10 +23,10 @@ async function callGeminiApi<TBody extends Record<string, any>>(body: TBody): Pr
   // In development with API key, call Gemini directly from browser
   if (isDev && genAI) {
     const { kind, base64, mimeType, systemPrompt, message, systemInstruction } = body;
-    
+
     if (kind === 'analyze') {
       const result = await genAI.models.generateContent({
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-flash-latest',
         contents: [
           {
             role: 'user',
@@ -47,10 +47,10 @@ async function callGeminiApi<TBody extends Record<string, any>>(body: TBody): Pr
       });
       return result.candidates?.[0]?.content?.parts?.[0]?.text || '';
     }
-    
+
     if (kind === 'chat') {
       const result = await genAI.models.generateContent({
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-flash-latest',
         contents: [
           {
             role: 'user',
@@ -64,7 +64,7 @@ async function callGeminiApi<TBody extends Record<string, any>>(body: TBody): Pr
       return result.candidates?.[0]?.content?.parts?.[0]?.text || '';
     }
   }
-  
+
   // In production, use the serverless API
   const res = await fetch("/api/gemini", {
     method: "POST",
@@ -102,7 +102,7 @@ export const analyzeResume = async (
       mimeType: mimeType || 'application/pdf',
       systemPrompt: SYSTEM_PROMPT,
     });
-    
+
     // Default fallback result
     let result: AnalysisResult = {
       overallScore: 0,
@@ -111,44 +111,44 @@ export const analyzeResume = async (
       status: "critical",
       scoreBand: "<60",
       breakdown: {
-        baseScore: 0, 
-        penalties: [], 
-        bonuses: [], 
-        parsingScore: 0, 
-        contentScore: 0, 
-        keywordScore: 0, 
+        baseScore: 0,
+        penalties: [],
+        bonuses: [],
+        parsingScore: 0,
+        contentScore: 0,
+        keywordScore: 0,
         finalScore: 0
       },
       signals: {
-        parsing: { 
-          isReadable: false, 
-          hasTables: false, 
-          hasMultiColumns: false, 
-          hasGraphics: false, 
-          hasStandardHeaders: false, 
-          hasContactInHeader: false 
+        parsing: {
+          isReadable: false,
+          hasTables: false,
+          hasMultiColumns: false,
+          hasGraphics: false,
+          hasStandardHeaders: false,
+          hasContactInHeader: false
         },
-        content: { 
-          totalBulletPoints: 0, 
-          bulletsWithMetrics: 0, 
-          actionVerbsCount: 0, 
-          weakWordsCount: 0, 
-          spellingErrors: 0, 
-          missingSections: [] 
+        content: {
+          totalBulletPoints: 0,
+          bulletsWithMetrics: 0,
+          actionVerbsCount: 0,
+          weakWordsCount: 0,
+          spellingErrors: 0,
+          missingSections: []
         },
-        keywords: { 
-          found: [], 
-          missing: [] 
+        keywords: {
+          found: [],
+          missing: []
         }
       },
       strengths: [],
       criticalIssues: [],
       improvements: [],
-      keywords: { 
-        missing: [], 
-        present: [], 
-        density: "Low", 
-        recommendation: "" 
+      keywords: {
+        missing: [],
+        present: [],
+        density: "Low",
+        recommendation: ""
       },
       priorityActions: []
     };
@@ -158,14 +158,14 @@ export const analyzeResume = async (
     if (jsonMatch && jsonMatch[1]) {
       try {
         const parsed = JSON.parse(jsonMatch[1]);
-        
+
         // --- DETERMINISTIC SCORING LAYER ---
         // We take the AI's "signals" and feed them into our math engine.
         // We ignore any scores the AI might have hallucinated.
         if (parsed.signals) {
           const breakdown = calculateDeterministicScore(parsed.signals);
           const statusInfo = getScoreStatus(breakdown.finalScore);
-          
+
           // Reconstruct the full AnalysisResult
           result = {
             ...result, // Defaults
@@ -177,17 +177,17 @@ export const analyzeResume = async (
             contentScore: breakdown.contentScore,
             status: statusInfo.label,
             scoreBand: statusInfo.band,
-            
+
             // Map keyword data for UI
             keywords: {
               present: parsed.signals.keywords.found || [],
               missing: parsed.signals.keywords.missing || [],
               density: breakdown.keywordScore > 70 ? "High" : breakdown.keywordScore > 40 ? "Moderate" : "Low",
-              recommendation: breakdown.keywordScore > 70 
-                ? "Good keyword matching." 
+              recommendation: breakdown.keywordScore > 70
+                ? "Good keyword matching."
                 : "Add more hard skills from the job description."
             },
-            
+
             // Ensure arrays exist
             strengths: parsed.strengths || [],
             criticalIssues: parsed.criticalIssues || [],
@@ -206,7 +206,7 @@ export const analyzeResume = async (
     return { result };
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
-    
+
     // Better error messages
     if (error instanceof Error) {
       if (error.message.includes('API key')) {
@@ -220,7 +220,7 @@ export const analyzeResume = async (
       }
       throw error;
     }
-    
+
     throw new Error('Failed to analyze resume. Please try again.');
   }
 };
@@ -243,10 +243,10 @@ export const sendChatMessage = async (message: string): Promise<string> => {
 // Helper function for chat (if needed in FloatingChat component)
 export const chatWithAI = async (message: string, context?: AnalysisResult): Promise<string> => {
   try {
-    const contextPrompt = context 
-      ? `\n\nContext: User's resume has overall score of ${context.overallScore}/100, ATS score of ${context.atsScore}/100, content score of ${context.contentScore}/100.` 
+    const contextPrompt = context
+      ? `\n\nContext: User's resume has overall score of ${context.overallScore}/100, ATS score of ${context.atsScore}/100, content score of ${context.contentScore}/100.`
       : '';
-    
+
     const text = await callGeminiApi({
       kind: "chat",
       message: message + contextPrompt,

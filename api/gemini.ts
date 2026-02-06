@@ -56,7 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log('🔍 Starting resume analysis...');
 
       const result = await genAI.models.generateContent({
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-flash-latest',
         contents: [
           {
             role: 'user',
@@ -93,7 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log('💬 Processing chat message...');
 
       const result = await genAI.models.generateContent({
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-flash-latest',
         contents: [
           {
             role: 'user',
@@ -117,7 +117,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (error: any) {
     console.error('❌ Gemini API Error:', error);
-    
+
     // Detailed error logging
     if (error?.message) {
       console.error('Error message:', error.message);
@@ -125,7 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (error?.status) {
       console.error('Error status:', error.status);
     }
-    
+
     // Better error messages
     if (error?.message?.includes('API key')) {
       return res.status(401).json({ error: 'Invalid API key. Please check VITE_GEMINI_API_KEY in Vercel settings.' });
@@ -136,8 +136,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (error?.status === 404) {
       return res.status(404).json({ error: 'Model not found. Using gemini-1.5-pro-latest.' });
     }
-    
-    return res.status(500).json({ 
+
+    return res.status(500).json({
       error: error?.message || 'Internal server error',
       details: process.env.NODE_ENV === 'development' ? error?.stack : undefined
     });
