@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased bg-slate-50 text-slate-900 font-sans;
+  }
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 20px;
+}
+
+@media print {
+  @page {
+    margin: 0.5cm;
+    size: A4;
+  }
+
+  body {
+    background-color: white;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Elements to hide when printing */
+  .no-print,
+  button,
+  .floating-chat,
+  .header-bg {
+    display: none !important;
+  }
+
+  /* Ensure dashboard expands */
+  .dashboard-container {
+    margin-top: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Break page before critical sections if needed */
+  .page-break {
+    page-break-before: always;
+  }
+
+  .text-slate-300 {
+    color: #64748b !important;
+    /* Make light text darker for print */
+  }
+}

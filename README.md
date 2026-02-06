@@ -50,7 +50,25 @@ It features an **ultra-strict scoring system** that ensures only truly exception
 *   **Reduced Bonuses:** All bonuses cut 50-60% to prevent score inflation.
 *   **MNC-Focused Criteria:** Evaluates based on FAANG and Fortune 500 expectations.
 
-### 🔍 Deep Dive Analysis
+### 🔍 Job Description (JD) Comparer
+*   **AI-Powered Matching:** Extracts key requirements from a provided JD and compares them against your resume.
+*   **Smart Scoring:** 
+    *   **Excellent Fit (>80%):** +15 point bonus
+    *   **Good Fit (>60%):** +10 point bonus
+    *   **Moderate Fit (>40%):** +5 point bonus
+*   **Gap Analysis:** Clearly lists matched vs. missing keywords/requirements.
+
+### ⚙️ ATS System Toggle
+*   **Two Modes:**
+    *   **Modern ATS (Greenhouse/Lever):** For tech startups and modern companies. Forgiving on tables/columns.
+    *   **Old School ATS (Taleo/SAP):** For banks and traditional MNCs. Strict penalties for tables (-20) and columns (-15).
+*   **Tailored Scoring:** Your score adjusts based on the target system's limitations.
+
+### 📋 Productivity Tools
+*   **Copy-Ready Bullets:** One-click copy for all AI-optimized bullet point suggestions.
+*   **Smart Clipboard:** Formats text perfectly for pasting into your resume editor.
+
+### 🎯 Deep Dive Analysis
 *   **Critical Issue Flagging:** Identifies specific blocks that will cause auto-rejection.
 *   **Keyword Gap Analysis:** Compares your resume against industry-standard keywords for your role.
 *   **Vocabulary Check:** Detects weak verbs ("Used", "Helped") and suggests power verbs ("Architected", "Spearheaded").
@@ -171,7 +189,8 @@ VITE_BASE=/ResumeOptima/ npm run build
 
 ## 🔮 Roadmap
 
-- [ ] **Job Description Matcher:** Upload a JD to score compatibility against a specific role.
+- [x] **Job Description Matcher:** Upload a JD to score compatibility against a specific role.
+- [x] **ATS Mode Toggle:** Switch between modern and legacy ATS scoring rules.
 - [ ] **PDF Export:** Download the audit report as a PDF.
 - [ ] **Resume Rewriter:** AI agent that directly edits the uploaded DOCX file.
 - [ ] **History:** LocalStorage saving of previous scans.

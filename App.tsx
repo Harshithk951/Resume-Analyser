@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { FileUpload } from './components/FileUpload';
-import { AnalysisDashboard } from './components/AnalysisDashboard';
+// Lazy load the dashboard
+const AnalysisDashboard = React.lazy(() => import('./components/AnalysisDashboard').then(module => ({ default: module.AnalysisDashboard })));
 import { FloatingChat } from './components/FloatingChat';
 import { analyzeResume } from './services/geminiService';
 import { AppStatus, AnalysisResult, ATSType } from './types';
-import { Bot, RefreshCw, Sparkles, Zap } from 'lucide-react';
+import Bot from 'lucide-react/dist/esm/icons/bot';
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
+import Zap from 'lucide-react/dist/esm/icons/zap';
 
 const App: React.FC = () => {
+    // ... existing state ...
     const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
     const [file, setFile] = useState<File | null>(null);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -14,6 +19,7 @@ const App: React.FC = () => {
     const [atsType, setATSType] = useState<ATSType>(ATSType.MODERN);
     const [jobDescription, setJobDescription] = useState<string>('');
 
+    // ... existing handlers ...
     const handleFileSelect = async (selectedFile: File) => {
         setFile(selectedFile);
         setStatus(AppStatus.ANALYZING);
@@ -63,7 +69,6 @@ const App: React.FC = () => {
         setFile(null);
         setAnalysisResult(null);
         setErrorMessage('');
-        // Don't reset ATS type and JD - user might want to keep them
     };
 
     const renderContent = () => {
@@ -196,11 +201,17 @@ const App: React.FC = () => {
                 return (
                     <div className="relative">
                         {analysisResult && (
-                            <AnalysisDashboard
-                                result={analysisResult}
-                                fileName={file?.name || 'Resume.pdf'}
-                                onReset={resetApp}
-                            />
+                            <Suspense fallback={
+                                <div className="h-screen w-full flex items-center justify-center bg-slate-50">
+                                    <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
+                                </div>
+                            }>
+                                <AnalysisDashboard
+                                    result={analysisResult}
+                                    fileName={file?.name || 'Resume.pdf'}
+                                    onReset={resetApp}
+                                />
+                            </Suspense>
                         )}
                         {/* Always show the Chat Assistant floating on top of the dashboard */}
                         <FloatingChat analysisContext={analysisResult} />

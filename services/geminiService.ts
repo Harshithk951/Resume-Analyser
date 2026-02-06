@@ -1,16 +1,18 @@
 import { SYSTEM_PROMPT } from "../constants";
 import { AnalysisResult, ATSType } from "../types";
 import { calculateDeterministicScore, getScoreStatus } from "./scoringLogic";
-import { GoogleGenAI } from '@google/genai';
+
 
 // Check if we're in development mode
 const isDev = import.meta.env.DEV;
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 // Initialize Gemini client for direct browser calls in dev mode
-let genAI: GoogleGenAI | null = null;
+let genAI: any = null;
 if (isDev && API_KEY) {
-  genAI = new GoogleGenAI({ apiKey: API_KEY });
+  import('@google/genai').then(module => {
+    genAI = new module.GoogleGenAI({ apiKey: API_KEY });
+  });
 }
 
 interface AnalyzeResumeParams {

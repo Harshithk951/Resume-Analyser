@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AnalysisResult, ScoreBreakdown, PenaltyOrBonus } from '../types';
 import { AlertTriangle, ArrowRight, X, Lock, Info, ChevronDown, ChevronUp, RefreshCw, CheckCircle2, Search, FileText, Download, Copy } from 'lucide-react';
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
@@ -11,14 +11,14 @@ interface AnalysisDashboardProps {
   onReset: () => void;
 }
 
-const CircularScore: React.FC<{ score: number; label: string; color: string; subLabel?: string }> = ({ score, label, color, subLabel }) => {
-  const data = [{ name: 'score', value: score, fill: color }];
+const CircularScore: React.FC<{ score: number; label: string; color: string; subLabel?: string }> = React.memo(({ score, label, color, subLabel }) => {
+  const data = useMemo(() => [{ name: 'score', value: score, fill: color }], [score, color]);
 
   return (
     <div className="flex flex-col items-center p-2">
       <div className="relative w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40">
-        {/* Glow effect */}
-        <div className="absolute inset-0 rounded-full blur-xl opacity-30" style={{ background: color }}></div>
+        {/* Glow effect - Optimized with will-change */}
+        <div className="absolute inset-0 rounded-full blur-xl opacity-30 will-change-transform" style={{ background: color }}></div>
 
         <ResponsiveContainer width="100%" height="100%">
           <RadialBarChart
@@ -44,9 +44,9 @@ const CircularScore: React.FC<{ score: number; label: string; color: string; sub
       <h3 className="mt-3 sm:mt-4 font-bold text-slate-800 text-sm sm:text-base md:text-lg text-center leading-tight">{label}</h3>
     </div>
   );
-};
+});
 
-const TransparencyPanel: React.FC<{ breakdown: ScoreBreakdown }> = ({ breakdown }) => {
+const TransparencyPanel: React.FC<{ breakdown: ScoreBreakdown }> = React.memo(({ breakdown }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -99,9 +99,9 @@ const TransparencyPanel: React.FC<{ breakdown: ScoreBreakdown }> = ({ breakdown 
       )}
     </div>
   );
-};
+});
 
-export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ result, fileName, onReset }) => {
+export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = React.memo(({ result, fileName, onReset }) => {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
@@ -123,11 +123,11 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ result, fi
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 pb-20 print:bg-white print:pb-0">
       {/* Header Section - Lighter gradient */}
-      <div className="w-full bg-gradient-to-r from-indigo-500/90 via-purple-500/90 to-pink-500/90 backdrop-blur-xl text-white pt-8 pb-24 md:pb-32 px-4 sm:px-6 header-bg print:hidden relative overflow-hidden">
-        {/* Animated background shapes */}
-        <div className="absolute inset-0 overflow-hidden opacity-20">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse delay-1000"></div>
+      <div className="w-full bg-gradient-to-r from-indigo-500/90 via-purple-500/90 to-pink-500/90 backdrop-blur-xl text-white pt-6 pb-20 md:pt-8 md:pb-32 px-4 sm:px-6 header-bg print:hidden relative overflow-hidden">
+        {/* Animated background shapes - using hardware acceleration */}
+        <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
+          <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse will-change-transform"></div>
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse delay-1000 will-change-transform"></div>
         </div>
 
         <div className="w-full max-w-[95%] 2xl:max-w-[1800px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
@@ -162,9 +162,8 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ result, fi
       </div>
 
       {/* Main Content Card - Glass Effect */}
-      <div className="w-full max-w-[95%] 2xl:max-w-[1800px] mx-auto px-4 md:px-6 -mt-12 md:-mt-20 dashboard-container print:mt-0 print:px-0">
-        <div className="bg-white/70 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-purple-200/50 p-5 sm:p-8 md:p-12 border border-white/60 relative overflow-hidden print:shadow-none print:rounded-none print:border-none print:bg-white">
-
+      <div className="w-full max-w-[95%] 2xl:max-w-[1800px] mx-auto px-3 sm:px-4 md:px-6 -mt-10 md:-mt-20 dashboard-container print:mt-0 print:px-0">
+        <div className="bg-white/70 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-purple-200/50 p-4 sm:p-8 md:p-12 border border-white/60 relative overflow-hidden print:shadow-none print:rounded-none print:border-none print:bg-white">
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-purple-50/30 pointer-events-none"></div>
 
@@ -219,10 +218,10 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ result, fi
                     <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" /> Job Description Match
                   </h3>
                   <span className={`px-2 sm:px-3 py-1 rounded-xl text-[10px] sm:text-xs font-bold border backdrop-blur-sm shadow-sm ${result.jdKeywords.matchPercentage >= 80
-                      ? "bg-green-100/60 border-green-200/60 text-green-700"
-                      : result.jdKeywords.matchPercentage >= 60
-                        ? "bg-yellow-100/60 border-yellow-200/60 text-yellow-700"
-                        : "bg-red-100/60 border-red-200/60 text-red-700"
+                    ? "bg-green-100/60 border-green-200/60 text-green-700"
+                    : result.jdKeywords.matchPercentage >= 60
+                      ? "bg-yellow-100/60 border-yellow-200/60 text-yellow-700"
+                      : "bg-red-100/60 border-red-200/60 text-red-700"
                     }`}>
                     Match: {result.jdKeywords.matchPercentage}%
                   </span>
@@ -263,7 +262,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ result, fi
             )}
 
             {/* Scores Section - Glass Circles */}
-            <div className={`grid ${result.jdMatchScore ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-3'} gap-y-6 gap-x-2 sm:gap-8 md:gap-12 mb-8 page-break-inside-avoid`}>
+            <div className={`grid ${result.jdMatchScore ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-3'} gap-y-8 gap-x-4 sm:gap-8 md:gap-12 mb-8 page-break-inside-avoid`}>
               <div className={`${result.jdMatchScore ? '' : 'col-span-2 md:col-span-1'} flex justify-center`}>
                 <CircularScore score={result.overallScore} label="Overall Score" color="#6366f1" subLabel={result.scoreBand} />
               </div>
@@ -422,4 +421,4 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ result, fi
       )}
     </div>
   );
-};
+});

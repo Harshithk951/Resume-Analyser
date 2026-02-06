@@ -32,14 +32,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg shadow-purple-200/30 p-5 border border-white/60">
         <div className="flex items-center gap-2 mb-4">
           <Settings className="w-5 h-5 text-indigo-600" />
-          <h3 className="font-bold text-slate-800 text-sm sm:text-base">ATS System Type</h3>
+          <h2 className="font-bold text-slate-800 text-sm sm:text-base">ATS System Type</h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label
             className={`flex items-start p-4 rounded-xl border-2 cursor-pointer transition-all ${atsType === ATSType.MODERN
-                ? 'border-indigo-500 bg-indigo-50/50 backdrop-blur-sm'
-                : 'border-slate-200 bg-white/40 backdrop-blur-sm hover:border-indigo-300'
+              ? 'border-indigo-500 bg-indigo-50/50 backdrop-blur-sm'
+              : 'border-slate-200 bg-white/40 backdrop-blur-sm hover:border-indigo-300'
               }`}
           >
             <input
@@ -63,8 +63,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
           <label
             className={`flex items-start p-4 rounded-xl border-2 cursor-pointer transition-all ${atsType === ATSType.OLD_SCHOOL
-                ? 'border-indigo-500 bg-indigo-50/50 backdrop-blur-sm'
-                : 'border-slate-200 bg-white/40 backdrop-blur-sm hover:border-indigo-300'
+              ? 'border-indigo-500 bg-indigo-50/50 backdrop-blur-sm'
+              : 'border-slate-200 bg-white/40 backdrop-blur-sm hover:border-indigo-300'
               }`}
           >
             <input
@@ -96,9 +96,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         >
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-indigo-600" />
-            <h3 className="font-bold text-slate-800 text-sm sm:text-base">
+            <h2 className="font-bold text-slate-800 text-sm sm:text-base">
               Job Description (Optional)
-            </h3>
+            </h2>
           </div>
           <span className="text-xs text-indigo-600 font-semibold">
             {showJDInput ? 'Hide' : 'Show'}
@@ -130,7 +130,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       <div className="w-full mx-auto">
         <label
           htmlFor="resume-upload"
-          className="flex flex-col items-center justify-center w-full h-64 sm:h-80 bg-white rounded-3xl shadow-2xl shadow-indigo-900/20 cursor-pointer group relative overflow-hidden transition-all duration-300 hover:shadow-indigo-900/30 hover:-translate-y-1"
+          className="flex flex-col items-center justify-center w-full min-h-[250px] sm:min-h-[320px] h-auto py-10 sm:py-0 bg-white rounded-3xl shadow-2xl shadow-indigo-900/20 cursor-pointer group relative overflow-hidden transition-all duration-300 hover:shadow-indigo-900/30 hover:-translate-y-1"
         >
           <div className="absolute inset-4 border-2 border-dashed border-slate-200 rounded-2xl group-hover:border-blue-400 transition-colors"></div>
 
