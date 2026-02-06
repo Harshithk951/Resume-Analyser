@@ -5,15 +5,29 @@ import { calculateDeterministicScore, getScoreStatus } from "./scoringLogic";
 
 // Check if we're in development mode
 const isDev = import.meta.env.DEV;
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+// API Key Management
+const API_KEYS = [
+  import.meta.env.VITE_GEMINI_API_KEY,
+  import.meta.env.VITE_GEMINI_API_KEY_2
+].filter(Boolean) as string[];
 
 // Initialize Gemini client for direct browser calls in dev mode
-let genAI: any = null;
-if (isDev && API_KEY) {
+// We'll create a new instance per request to support key rotation
+let GoogleGenAI: any = null;
+
+if (isDev && API_KEYS.length > 0) {
   import('@google/genai').then(module => {
-    genAI = new module.GoogleGenAI({ apiKey: API_KEY });
+    GoogleGenAI = module.GoogleGenAI;
   });
 }
+
+const getGenAIClient = () => {
+  if (!GoogleGenAI || API_KEYS.length === 0) return null;
+  // Simple random rotation to distribute load
+  const randomKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
+  return new GoogleGenAI({ apiKey: randomKey });
+};
 
 interface AnalyzeResumeParams {
   base64: string;
@@ -24,11 +38,13 @@ interface AnalyzeResumeParams {
 
 async function callGeminiApi<TBody extends Record<string, any>>(body: TBody): Promise<string> {
   // In development with API key, call Gemini directly from browser
-  if (isDev && genAI) {
+  const client = getGenAIClient();
+
+  if (isDev && client) {
     const { kind, base64, mimeType, systemPrompt, message, systemInstruction } = body;
 
     if (kind === 'analyze') {
-      const result = await genAI.models.generateContent({
+      const result = await client.models.generateContent({
         model: 'gemini-flash-latest',
         contents: [
           {
@@ -52,7 +68,7 @@ async function callGeminiApi<TBody extends Record<string, any>>(body: TBody): Pr
     }
 
     if (kind === 'chat') {
-      const result = await genAI.models.generateContent({
+      const result = await client.models.generateContent({
         model: 'gemini-flash-latest',
         contents: [
           {
